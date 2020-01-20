@@ -3,23 +3,21 @@ $sut = (Split-Path -Leaf $MyInvocation.MyCommand.Path) -replace '\.Tests\.', '.'
 . "$here\$sut"
 
 Function Use-MountedDiskImage {
-   param ( 
-   # Файл образа диска 
-   [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)] 
-   [ValidateNotNullOrEmpty()] 
-   [ValidateScript( { Test-Path -Path $PSItem -PathType Leaf })] 
-   [Alias("FullName")] 
-   [IO.FileInfo] 
-   $Path
-   )
-  
-   process { [MountedDiskImage]::new($Path) }
+    param ( 
+        # Файл образа диска 
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)] 
+        [ValidateNotNullOrEmpty()] 
+        [ValidateScript( { Test-Path -Path $PSItem -PathType Leaf })] 
+        [Alias("FullName")] 
+        [IO.FileInfo] 
+        $Path 
+     ) 
+     
+      
+    process { try { [MountedDiskImage]::new($Path) } catch { $Error[0].Exception.Message } }
 }
 
-
-
-
-Describe "Testing MountedDiskImage Class loading" {
+Describe "Test MountedDiskImage Class loading" {
     BeforeAll {
         $Path = "M:\VM\Hyper-V\Virtual Hard Disks\gen1.vhdx"
     }
@@ -28,16 +26,16 @@ Describe "Testing MountedDiskImage Class loading" {
         Remove-Variable -Name Path
     }
 
-    It "class been loaded and works" {
-        $MountedDiskImage = Use-MountedDiskImage -Path $Path 
+    It "class has been loaded and works" {
+        $MountedDiskImage = $Path | Use-MountedDiskImage 
         $MountedDiskImage.Path | Should -Be $Path
     }
 }
 
-Describe "Testing MountedDiskImage Class side effects" {
+Describe "Test MountedDiskImage Class side effects" {
     BeforeAll {
         $Path = "M:\VM\Hyper-V\Virtual Hard Disks\gen1.vhdx"
-        $MountedDiskImage = Use-MountedDiskImage -Path $Path 
+        $MountedDiskImage = $Path | Use-MountedDiskImage 
     }
 
     AfterAll {
@@ -47,5 +45,29 @@ Describe "Testing MountedDiskImage Class side effects" {
     # у меня тест не проходит, потому что буква не назначена
     It "drive letter is assigned" {
         $MountedDiskImage.DriveLetter | Should Match '[B-Z]'
+    }
+
+    It 'works with multiple images' {
+
+    }
+}
+
+Describe "Test MountedDiskImage Class working with arrays" {
+    BeforeAll {
+        $Path = @("M:\VM\Hyper-V\Virtual Hard Disks\gen1.vhdx", 'G:\synoboot.vhd')
+        $MountedDiskImage = $Path | Use-MountedDiskImage 
+    }
+
+    AfterAll {
+        Remove-Variable -Name Path -ea SilentlyContinue
+    }
+
+    # у меня тест не проходит, потому что буква не назначена
+    It "drive letter is assigned" {
+        $MountedDiskImage.DriveLetter | Should Match '[B-Z]'
+    }
+
+    It 'works with multiple images' {
+
     }
 }
